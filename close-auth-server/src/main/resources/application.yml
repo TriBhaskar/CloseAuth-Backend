@@ -1,0 +1,10 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: closeAuth
+  dataSource:
+    url: "jdbc:postgresql://localhost:5432/close_auth"
+    username: postgres
+    password: postgres
