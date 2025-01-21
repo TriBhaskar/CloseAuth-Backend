@@ -2,9 +2,33 @@ server:
   port: 8085
 
 spring:
-  application:
-    name: closeAuth
-  dataSource:
-    url: "jdbc:postgresql://localhost:5432/close_auth"
+  profiles:
+    active: dev
+    group:
+      dev: dev
+      prod: prod
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/close_auth
     username: postgres
     password: postgres
+  flyway:
+    locations: classpath:db/migration
+    repair-on-migrate: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://prod-host:5432/close_auth
+    username: ${PROD_DB_USER}
+    password: ${PROD_DB_PASS}
+  flyway:
+    locations: classpath:db/migration
