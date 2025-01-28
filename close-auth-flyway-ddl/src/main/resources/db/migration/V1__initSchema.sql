@@ -77,6 +77,7 @@ CREATE TABLE close_auth_enterprise_details (
     ent_email VARCHAR(100) NOT NULL,
     ent_contact_number VARCHAR(10) NOT NULL,
     ent_country VARCHAR(50) NOT NULL,
+    ent_city VARCHAR(50) NOT NULL,
     ent_state VARCHAR(50) NOT NULL,
     ent_address VARCHAR(500),
     ent_pin_code INTEGER NOT NULL,
