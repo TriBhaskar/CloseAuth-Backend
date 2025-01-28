@@ -63,7 +63,7 @@ CREATE SEQUENCE seq_close_auth_enterprise_application_user_access_id
     CACHE 1;
 
 -- ENUMS
-CREATE TYPE enterprise_user_status_enum AS ENUM ('BLOCKED', 'UNBLOCKED');
+CREATE TYPE user_status_enum AS ENUM ('BLOCKED', 'UNBLOCKED');
 CREATE TYPE license_type_enum AS ENUM ('FREE', 'BASIC', 'PREMIUM', 'ENTERPRISE');
 CREATE TYPE transaction_status_enum AS ENUM ('SUCCESS', 'FAILED');
 CREATE TYPE allocated_license_status_enum AS ENUM ('ACTIVE', 'EXPIRED');
@@ -79,7 +79,7 @@ CREATE TABLE close_auth_enterprise_details (
     ent_country VARCHAR(50) NOT NULL,
     ent_state VARCHAR(50) NOT NULL,
     ent_address VARCHAR(500),
-    ent_pin_code INTEGER NOT NULL,
+    ent_pin_code VARCHAR(10) NOT NULL,
     ent_created_by VARCHAR(50) NOT NULL,
     ent_created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     ent_updated_by VARCHAR(50),
@@ -105,7 +105,7 @@ CREATE TABLE close_auth_enterprise_users (
     ent_user_email VARCHAR(100) NOT NULL,
     ent_user_password VARCHAR(255) NOT NULL,
     ent_user_role_id BIGINT NOT NULL,
-    ent_user_status enterprise_user_status_enum NOT NULL DEFAULT 'UNBLOCKED',
+    ent_user_status user_status_enum NOT NULL DEFAULT 'UNBLOCKED',
     ent_user_last_login_at TIMESTAMP WITH TIME ZONE,
     ent_user_failed_login_attempts INTEGER DEFAULT 0,
     ent_user_last_password_changed_At TIMESTAMP WITH TIME ZONE,
