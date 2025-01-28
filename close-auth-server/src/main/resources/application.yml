@@ -1,5 +1,31 @@
+application:
+  id: close-auth
+
 server:
   port: 8085
+  shutdown: graceful
+  servlet:
+    context-path: /cauth
+
+logging:
+  level:
+    root: info
+
+spring:
+  application:
+    name: ${application.id}
+  security:
+    user:
+      name: admin
+      password: admin
+---
+
+jwt:
+  security:
+    secret-key: Y/Eag7nA6m8hOeBHpZxZWXwLmdDezzcx+x76Gc6RvFQ=
+    expiration:
+      time:
+        in-hours: 2
 
 spring:
   profiles:
@@ -17,9 +43,19 @@ spring:
     url: jdbc:postgresql://localhost:5432/close_auth
     username: postgres
     password: postgres
+    driver-class-name: org.postgresql.Driver
   flyway:
     locations: classpath:db/migration
     repair-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format-sql: true
+    database: postgresql
+
 
 ---
 spring:

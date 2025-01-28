@@ -1,4 +1,4 @@
-package com.anterka;
+package com.anterka.closeauth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
