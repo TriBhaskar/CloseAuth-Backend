@@ -15,7 +15,7 @@ import javax.validation.constraints.NotNull;
 public class CloseAuthAuthenticationRequest {
     @NotNull(message = "Email cannot be null")
     @NotBlank(message = "Email cannot be empty")
-    private String email;
+    private String username;
 
     @NotNull(message = "password cannot be null")
     @NotBlank(message = "password cannot be empty")

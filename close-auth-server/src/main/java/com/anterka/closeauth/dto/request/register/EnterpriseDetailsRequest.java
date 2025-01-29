@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 
 @Data
 @Builder
@@ -17,10 +16,11 @@ public class EnterpriseDetailsRequest {
     @NotBlank(message = "Enterprise name is required")
     private String enterpriseName;
 
+    @NotBlank(message = "Enterprise email is required")
     @Email(message = "Invalid email format")
-    private String enterpriseEmail; // Optional
+    private String enterpriseEmail;
 
-    @Pattern(regexp = "^\\+?[1-9][0-9]{7,14}$", message = "Invalid contact number")
+    @NotBlank(message = "Phone number is required")
     private String enterpriseContactNumber;
 
     @NotBlank(message = "Country is required")
@@ -33,7 +33,6 @@ public class EnterpriseDetailsRequest {
     private String enterpriseCity;
 
     @NotBlank(message = "Pin code is required")
-    @Pattern(regexp = "^[0-9]{5,6}$", message = "Invalid pin code")
     private String enterprisePinCode;
 
     @NotBlank(message = "Address is required")

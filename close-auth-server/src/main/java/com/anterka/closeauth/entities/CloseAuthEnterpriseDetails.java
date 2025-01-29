@@ -53,6 +53,9 @@ public class CloseAuthEnterpriseDetails implements Serializable {
     @Column(name = CloseAuthTables.EnterpriseDetails.STATE)
     private String state;
 
+    @Column(name = CloseAuthTables.EnterpriseDetails.CITY)
+    private String city;
+
     @Column(name = CloseAuthTables.EnterpriseDetails.ADDRESS)
     private String address;
 

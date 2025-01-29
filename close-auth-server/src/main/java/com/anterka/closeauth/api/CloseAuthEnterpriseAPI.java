@@ -31,6 +31,7 @@ public class CloseAuthEnterpriseAPI {
 
     @PostMapping(ApiPaths.LOGIN)
     public ResponseEntity<CloseAuthAuthenticationResponse> login(@RequestBody CloseAuthAuthenticationRequest request) {
+        log.info("Received authentication request : {}", request);
         return ResponseEntity.ok(authAuthenticationService.authenticate(request));
     }
 

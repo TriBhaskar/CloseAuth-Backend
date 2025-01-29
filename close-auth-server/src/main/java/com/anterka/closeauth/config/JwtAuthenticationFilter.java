@@ -26,6 +26,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
     private final CloseAuthEnterpriseUserService closeAuthEnterpriseUserService;
     public static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Skip filter for login and register endpoints
+        String path = request.getServletPath();
+        return path.contains("/api/v1/login") || path.contains("/api/v1/register");
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -55,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticateAndUpdateContext(HttpServletRequest request, String jwtToken, UserDetails userDetails) {
-        if (jwtService.isTokenValid(jwtToken, userDetails)){
+        if (Boolean.TRUE.equals(jwtService.isTokenValid(jwtToken, userDetails))){
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);

@@ -1,6 +1,7 @@
 package com.anterka.closeauth.dto.response;
 
 import com.anterka.closeauth.constants.UserStatusEnum;
+import com.anterka.closeauth.entities.CloseAuthEnterpriseDetails;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ public class EnterpriseRegistrationResponse {
     private EnterpriseUserResponse user;
     private EnterpriseDetailsResponse enterprise;
 
-    public static EnterpriseRegistrationResponse fromEntity(CloseAuthEnterpriseUser user) {
+    public static EnterpriseRegistrationResponse fromEntity(CloseAuthEnterpriseUser user, CloseAuthEnterpriseDetails enterpriseDetails) {
         return EnterpriseRegistrationResponse.builder()
                 .status("SUCCESS")
                 .message("Enterprise registered successfully")
@@ -29,13 +30,12 @@ public class EnterpriseRegistrationResponse {
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
                         .userName(user.getUsername())
-                        .email(user.getEmail())
                         .build())
                 .enterprise(EnterpriseDetailsResponse.builder()
-                        .id(user.getCloseAuthEnterpriseDetails().getId())
-                        .name(user.getCloseAuthEnterpriseDetails().getName())
-                        .email(user.getCloseAuthEnterpriseDetails().getEmail())
-                        .createdAt(user.getCloseAuthEnterpriseDetails().getCreatedAt())
+                        .id(enterpriseDetails.getId())
+                        .name(enterpriseDetails.getName())
+                        .email(enterpriseDetails.getEmail())
+                        .createdAt(enterpriseDetails.getCreatedAt())
                         .build())
                 .build();
     }
@@ -49,7 +49,6 @@ public class EnterpriseRegistrationResponse {
         private String firstName;
         private String lastName;
         private String userName;
-        private String email;
         private UserStatusEnum status;
         private Instant createdAt;
     }

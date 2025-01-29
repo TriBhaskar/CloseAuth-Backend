@@ -4,7 +4,6 @@ import com.anterka.closeauth.constants.CloseAuthTables;
 import com.anterka.closeauth.constants.UserStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,6 +16,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,10 +29,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = CloseAuthTables.EnterpriseUsers.TABLE_NAME)
 public class CloseAuthEnterpriseUser implements UserDetails, Serializable {
 
@@ -45,8 +46,8 @@ public class CloseAuthEnterpriseUser implements UserDetails, Serializable {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = CloseAuthTables.EnterpriseDetails.ID, referencedColumnName = CloseAuthTables.EnterpriseDetails.ID, nullable = false)
-    private transient CloseAuthEnterpriseDetails closeAuthEnterpriseDetails;
+    @JoinColumn(name = CloseAuthTables.EnterpriseUsers.ENT_ID, referencedColumnName = CloseAuthTables.EnterpriseDetails.ID)
+    private CloseAuthEnterpriseDetails closeAuthEnterpriseDetails;
 
     @Column(name = CloseAuthTables.EnterpriseUsers.FIRST_NAME)
     private String firstName;
@@ -64,11 +65,12 @@ public class CloseAuthEnterpriseUser implements UserDetails, Serializable {
     private String password;
 
     @ManyToOne
-    @JoinColumn(name = CloseAuthTables.EnterpriseUsers.ROLE)
-    private transient CloseAuthUserRole role;
+    @JoinColumn(name = CloseAuthTables.EnterpriseUsers.ROLE, referencedColumnName = CloseAuthTables.EnterpriseUserRoles.ID)
+    private CloseAuthUserRole role;
 
     @Column(name = CloseAuthTables.EnterpriseUsers.STATUS)
-    @Enumerated(EnumType.STRING)
+    @Enumerated
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     private UserStatusEnum status;
 
     @Column(name = CloseAuthTables.EnterpriseUsers.LAST_LOGIN)
@@ -109,21 +111,21 @@ public class CloseAuthEnterpriseUser implements UserDetails, Serializable {
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return getStatus() == UserStatusEnum.UNBLOCKED;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
 }

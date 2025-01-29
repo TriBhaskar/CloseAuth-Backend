@@ -4,7 +4,6 @@ import com.anterka.closeauth.constants.CloseAuthTables;
 import com.anterka.closeauth.constants.UserRolesEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -12,6 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -31,7 +32,8 @@ public class CloseAuthUserRole implements Serializable {
     private Long id;
 
     @Column(name = CloseAuthTables.EnterpriseUserRoles.ROLE)
-    @Enumerated(EnumType.STRING)
+    @Enumerated
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     private UserRolesEnum role;
 
     @Column(name = CloseAuthTables.EnterpriseUserRoles.DESCRIPTION)

@@ -22,6 +22,7 @@ public class CloseAuthTables {
         public static final String CONTACT = "ent_contact_number";
         public static final String COUNTRY = "ent_country";
         public static final String STATE = "ent_state";
+        public static final String CITY = "ent_city";
         public static final String ADDRESS = "ent_address";
         public static final String PIN_CODE = "ent_pin_code";
         public static final String CREATED_BY = "ent_created_by";
@@ -51,6 +52,7 @@ public class CloseAuthTables {
          * [close_auth_enterprise_users] table's column names below
          * */
         public static final String ID = "ent_user_id";
+        public static final String ENT_ID = "ent_id";
         public static final String FIRST_NAME = "ent_user_first_name";
         public static final String LAST_NAME = "ent_user_last_name";
         public static final String USER_NAME = "ent_user_user_name";

@@ -1,6 +1,5 @@
 package com.anterka.closeauth.config;
 
-import com.anterka.closeauth.api.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +25,7 @@ public class SecurityConfiguration {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/cauth/api/v1/**").permitAll()
+                        .requestMatchers("/api/v1/login", "/api/v1/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
