@@ -1,7 +1,7 @@
 package com.anterka.closeauth.api.support;
 
 import com.anterka.closeauth.exception.CredentialValidationException;
-import com.anterka.closeauth.exception.EmailAlreadyExistsException;
+import com.anterka.closeauth.exception.DataAlreadyExistsException;
 import com.anterka.closeauth.exception.EnterpriseRegistrationException;
 import com.anterka.closeauth.exception.UserAuthenticationException;
 import com.anterka.closeauth.exception.UserNotFoundException;
@@ -23,7 +23,7 @@ public class GlobalAdviceController extends RuntimeException {
     public static class ErrorResponse {
         private final String message;
         private final HttpStatus status;
-        private LocalDateTime timestamp = LocalDateTime.now();
+        private final LocalDateTime timestamp = LocalDateTime.now();
     }
 
     @ExceptionHandler(UserNotFoundException.class)
@@ -36,8 +36,8 @@ public class GlobalAdviceController extends RuntimeException {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED), HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(EmailAlreadyExistsException ex){
+    @ExceptionHandler(DataAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(DataAlreadyExistsException ex){
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.CONFLICT), HttpStatus.CONFLICT);
     }
 
@@ -50,4 +50,5 @@ public class GlobalAdviceController extends RuntimeException {
     public ResponseEntity<ErrorResponse> handleEnterpriseRegException(EnterpriseRegistrationException ex){
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
 }

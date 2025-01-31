@@ -75,5 +75,5 @@ public class CloseAuthEnterpriseDetails implements Serializable {
     private Instant updatedAt;
 
     @OneToMany(mappedBy = "closeAuthEnterpriseDetails", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private transient List<CloseAuthEnterpriseUser> closeAuthEnterpriseUsers;
+    private List<CloseAuthEnterpriseUser> closeAuthEnterpriseUsers;
 }

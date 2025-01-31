@@ -30,6 +30,8 @@ public class EnterpriseRegistrationResponse {
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
                         .userName(user.getUsername())
+                        .status(user.getStatus())
+                        .createdAt(user.getCreatedAt())
                         .build())
                 .enterprise(EnterpriseDetailsResponse.builder()
                         .id(enterpriseDetails.getId())
