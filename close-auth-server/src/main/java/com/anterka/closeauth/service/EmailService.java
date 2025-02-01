@@ -1,5 +1,6 @@
 package com.anterka.closeauth.service;
 
+import com.anterka.closeauth.exception.EmailSendingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class EmailService {
             log.info("Email sent successfully");
         } catch (MailException e) {
             log.error("Failed to send email: {}", e.getMessage());
-            throw new RuntimeException("Failed to process email verification request");
+            throw new EmailSendingException("Failed to process email verification request");
         }
 
     }
