@@ -30,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -47,6 +48,9 @@ public class CloseAuthAuthenticationService {
     private final CloseAuthUserRoleRepository userRoleRepository;
     private final JWTService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final OtpService otpService;
+    private final EmailService emailService;
+    private final RegistrationCacheService registrationCacheService;
 
     /**
      * Handles the login of the enterprise user on the close-auth dashboard
@@ -73,16 +77,18 @@ public class CloseAuthAuthenticationService {
     /**
      * Handles the registration of the enterprises on close-auth
      */
+
     @Transactional
     public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) {
         validateEnterpriseData(request.getEnterpriseDetails());
-        CloseAuthEnterpriseDetails enterpriseDetails = mapper.toEnterpriseDetails(request);
-        if (enterpriseDetails.getEmail() == null || enterpriseDetails.getEmail().isEmpty()) {
-            enterpriseDetails.setEmail(request.getEnterpriseDetails().getEnterpriseEmail());
-        }
-        CloseAuthEnterpriseDetails savedDetails = detailsRepository.save(enterpriseDetails);
-        CloseAuthEnterpriseUser user = saveAndReturnUser(request, savedDetails);
-        return createRegistrationResponse(user, enterpriseDetails);
+        // Send Email with OTP
+        String otp = otpService.generateOtp();
+        long otpValiditySeconds = otpService.saveOtp(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        emailService.sendOTPMail(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        registrationCacheService.saveRegistration(request.getEnterpriseDetails().getEnterpriseEmail(), request);
+        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status("success").
+                message("OTP sent to the email: [" + request.getEnterpriseDetails().getEnterpriseEmail() + "]").
+                timestamp(LocalDateTime.now()).build();
     }
 
     /**
@@ -112,12 +118,10 @@ public class CloseAuthAuthenticationService {
      * Creates the [{@link EnterpriseRegistrationResponse}]
      *
      * @param user              which holds the [{@link CloseAuthEnterpriseUser}]
-     * @param enterpriseDetails which holds the [{@link CloseAuthEnterpriseDetails]
      */
-    private EnterpriseRegistrationResponse createRegistrationResponse(CloseAuthEnterpriseUser user, CloseAuthEnterpriseDetails enterpriseDetails) {
+    private EnterpriseRegistrationResponse createRegistrationResponse(CloseAuthEnterpriseUser user) {
         var jwtToken = jwtService.generateJwtToken(user);
-        EnterpriseRegistrationResponse response = EnterpriseRegistrationResponse.fromEntity(user, enterpriseDetails);
-        response.setToken(jwtToken);
+        EnterpriseRegistrationResponse response = new EnterpriseRegistrationResponse();
         return response;
     }
 
