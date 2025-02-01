@@ -63,11 +63,11 @@ CREATE SEQUENCE seq_close_auth_enterprise_application_user_access_id
     CACHE 1;
 
 -- ENUMS
-CREATE TYPE enterprise_user_status_enum AS ENUM ('BLOCKED', 'UNBLOCKED');
+CREATE TYPE userstatusenum AS ENUM ('BLOCKED', 'UNBLOCKED');
 CREATE TYPE license_type_enum AS ENUM ('FREE', 'BASIC', 'PREMIUM', 'ENTERPRISE');
 CREATE TYPE transaction_status_enum AS ENUM ('SUCCESS', 'FAILED');
 CREATE TYPE allocated_license_status_enum AS ENUM ('ACTIVE', 'EXPIRED');
-CREATE TYPE user_roles_enum AS ENUM('ADMIN', 'USER', 'ORGANIZATION');
+CREATE TYPE userrolesenum AS ENUM('ADMIN', 'USER', 'ORGANIZATION');
 CREATE TYPE app_users_user_status_enum AS ENUM ('ACTIVE', 'INACTIVE');
 
 -- Enterprise Details table
@@ -80,7 +80,7 @@ CREATE TABLE close_auth_enterprise_details (
     ent_city VARCHAR(50) NOT NULL,
     ent_state VARCHAR(50) NOT NULL,
     ent_address VARCHAR(500),
-    ent_pin_code INTEGER NOT NULL,
+    ent_pin_code VARCHAR(10) NOT NULL,
     ent_created_by VARCHAR(50) NOT NULL,
     ent_created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     ent_updated_by VARCHAR(50),
@@ -92,7 +92,7 @@ CREATE TABLE close_auth_enterprise_details (
 -- Enterprise Roles table
 CREATE TABLE close_auth_enterprise_roles (
     ent_role_id BIGINT DEFAULT nextval('seq_enterprise_roles_id') PRIMARY KEY,
-    ent_role_name user_roles_enum NOT NULL DEFAULT 'USER',
+    ent_role_name userrolesenum NOT NULL DEFAULT 'USER',
     ent_role_description TEXT
 );
 
@@ -106,7 +106,7 @@ CREATE TABLE close_auth_enterprise_users (
     ent_user_email VARCHAR(100) NOT NULL,
     ent_user_password VARCHAR(255) NOT NULL,
     ent_user_role_id BIGINT NOT NULL,
-    ent_user_status enterprise_user_status_enum NOT NULL DEFAULT 'UNBLOCKED',
+    ent_user_status userstatusenum NOT NULL DEFAULT 'UNBLOCKED',
     ent_user_last_login_at TIMESTAMP WITH TIME ZONE,
     ent_user_failed_login_attempts INTEGER DEFAULT 0,
     ent_user_last_password_changed_At TIMESTAMP WITH TIME ZONE,
@@ -201,7 +201,7 @@ CREATE TABLE close_auth_enterprise_application_users (
     ent_app_users_user_password VARCHAR(20) NOT NULL,
     ent_app_users_user_first_name VARCHAR(20) NOT NULL,
     ent_app_users_user_last_name VARCHAR(20) NOT NULL,
-    ent_app_users_user_role_id user_roles_enum NOT NULL,
+    ent_app_users_user_role_id userrolesenum NOT NULL,
     ent_app_users_user_email VARCHAR(50) NOT NULL,
     ent_app_users_user_status app_users_user_status_enum NOT NULL DEFAULT 'INACTIVE',
     ent_app_users_user_created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
