@@ -8,16 +8,15 @@ import com.anterka.closeauth.dto.mapper.EnterpriseRegistrationMapper;
 import com.anterka.closeauth.dto.request.auth.CloseAuthAuthenticationRequest;
 import com.anterka.closeauth.dto.request.register.EnterpriseDetailsRequest;
 import com.anterka.closeauth.dto.request.register.EnterpriseRegistrationRequest;
+import com.anterka.closeauth.dto.request.verifyotp.EnterpriseResendOtpRequest;
+import com.anterka.closeauth.dto.request.verifyotp.EnterpriseVerifyOtpRequest;
 import com.anterka.closeauth.dto.response.CloseAuthAuthenticationResponse;
+import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseRegistrationResponse;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseDetails;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseUser;
 import com.anterka.closeauth.entities.CloseAuthUserRole;
-import com.anterka.closeauth.exception.CredentialValidationException;
-import com.anterka.closeauth.exception.DataAlreadyExistsException;
-import com.anterka.closeauth.exception.EnterpriseRegistrationException;
-import com.anterka.closeauth.exception.UserAuthenticationException;
-import com.anterka.closeauth.exception.UserNotFoundException;
+import com.anterka.closeauth.exception.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -47,6 +47,9 @@ public class CloseAuthAuthenticationService {
     private final CloseAuthUserRoleRepository userRoleRepository;
     private final JWTService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final OtpService otpService;
+    private final EmailService emailService;
+    private final RegistrationCacheService registrationCacheService;
 
     /**
      * Handles the login of the enterprise user on the close-auth dashboard
@@ -73,16 +76,81 @@ public class CloseAuthAuthenticationService {
     /**
      * Handles the registration of the enterprises on close-auth
      */
+
     @Transactional
     public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) {
         validateEnterpriseData(request.getEnterpriseDetails());
-        CloseAuthEnterpriseDetails enterpriseDetails = mapper.toEnterpriseDetails(request);
+        // Send Email with OTP
+        String otp = otpService.generateOtp();
+        long otpValiditySeconds = otpService.saveOtp(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        emailService.sendOTPMail(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        registrationCacheService.saveRegistration(request.getEnterpriseDetails().getEnterpriseEmail(), request);
+        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status("success").
+                message("OTP sent to the email: [" + request.getEnterpriseDetails().getEnterpriseEmail() + "]").
+                timestamp(LocalDateTime.now()).build();
+    }
+
+    /**
+     * Verifies the enterprise email using the provided OTP.
+     *
+     * @param request the request containing the email and OTP to be verified
+     * @return a CustomApiResponse indicating the status of the email verification
+     * @throws EmailVerificationException if the registration request is not found or OTP is invalid
+     */
+    @Transactional
+    public CustomApiResponse verifyEnterpriseEmail(EnterpriseVerifyOtpRequest request) {
+        EnterpriseRegistrationRequest registrationRequest = registrationCacheService.getRegistration(request.getEmail());
+        validateEmail(request, registrationRequest);
+        CloseAuthEnterpriseDetails enterpriseDetails = mapper.toEnterpriseDetails(registrationRequest);
         if (enterpriseDetails.getEmail() == null || enterpriseDetails.getEmail().isEmpty()) {
-            enterpriseDetails.setEmail(request.getEnterpriseDetails().getEnterpriseEmail());
+            enterpriseDetails.setEmail(registrationRequest.getEnterpriseDetails().getEnterpriseEmail());
         }
         CloseAuthEnterpriseDetails savedDetails = detailsRepository.save(enterpriseDetails);
-        CloseAuthEnterpriseUser user = saveAndReturnUser(request, savedDetails);
-        return createRegistrationResponse(user, enterpriseDetails);
+        CloseAuthEnterpriseUser user = saveAndReturnUser(registrationRequest, savedDetails);
+        otpService.deleteOtp(request.getEmail());
+        registrationCacheService.deleteRegistration(request.getEmail());
+        return CustomApiResponse.builder().status("success").message("Enterprise registered successfully user:"+user.getUsername()).timestamp(LocalDateTime.now()).build();
+    }
+
+    /**
+     * Resends the OTP for enterprise email verification.
+     *
+     * @param request the request containing the email to which the OTP should be resent
+     * @return a CustomApiResponse indicating the status of the OTP resend operation
+     * @throws EmailVerificationException if the registration request is not found for the provided email
+     */
+    @Transactional
+    public CustomApiResponse resendEnterpriseOTP(EnterpriseResendOtpRequest request) {
+        EnterpriseRegistrationRequest registrationRequest = registrationCacheService.getRegistration(request.getEmail());
+        if (registrationRequest == null) {
+            throw new EmailVerificationException("Registration request not found for email: [" + request.getEmail() + "]");
+        }
+        String otp = otpService.generateOtp();
+        otpService.saveOtp(request.getEmail(), otp);
+        emailService.sendOTPMail(request.getEmail(), otp);
+        registrationCacheService.saveRegistration(request.getEmail(), registrationRequest);
+        return CustomApiResponse.builder().status("success").message("OTP sent to the email: [" + request.getEmail() + "]").timestamp(LocalDateTime.now()).build();
+    }
+
+    /**
+     * Validates the OTP for the enterprise email verification.
+     *
+     * @param request the request containing the email and OTP to be verified
+     * @param registrationRequest the registration request associated with the email
+     * @throws EmailVerificationException if the registration request is not found, OTP is expired, or OTP is invalid
+     */
+
+    private void validateEmail(EnterpriseVerifyOtpRequest request, EnterpriseRegistrationRequest registrationRequest) {
+        if (registrationRequest == null) {
+            throw new EmailVerificationException("Registration request not found for email: [" + request.getEmail() + "]");
+        }
+        String otp = otpService.getOtp(request.getEmail());
+        if (otp == null) {
+            throw new EmailVerificationException("OTP Already Expired: [" + request.getEmail() + "]");
+        }
+        if (!otp.equals(request.getOtp())) {
+            throw new EmailVerificationException("Invalid OTP for email: [" + request.getEmail() + "]");
+        }
     }
 
     /**
@@ -106,19 +174,6 @@ public class CloseAuthAuthenticationService {
             throw new EnterpriseRegistrationException("Exception: [{"+exception.getCause()+"}] occurred while associating the user: ["+user+"] with the organization : ["+savedDetails.getName()+"]");
         }
         return userRepository.findByEmail(user.getEmail()).orElseThrow(() -> new UserNotFoundException("Unable to find the user " + user.getEmail() + " in close-auth"));
-    }
-
-    /**
-     * Creates the [{@link EnterpriseRegistrationResponse}]
-     *
-     * @param user              which holds the [{@link CloseAuthEnterpriseUser}]
-     * @param enterpriseDetails which holds the [{@link CloseAuthEnterpriseDetails]
-     */
-    private EnterpriseRegistrationResponse createRegistrationResponse(CloseAuthEnterpriseUser user, CloseAuthEnterpriseDetails enterpriseDetails) {
-        var jwtToken = jwtService.generateJwtToken(user);
-        EnterpriseRegistrationResponse response = EnterpriseRegistrationResponse.fromEntity(user, enterpriseDetails);
-        response.setToken(jwtToken);
-        return response;
     }
 
     /**

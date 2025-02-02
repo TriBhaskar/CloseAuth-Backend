@@ -9,12 +9,10 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class EnterpriseRegistrationResponse {
-    private String status;
+@NoArgsConstructor
+public class CustomApiResponse {
     private String message;
-    private String username;
-    private long otpValiditySeconds;
+    private String status;
     private LocalDateTime timestamp;
 }

@@ -1,10 +1,6 @@
 package com.anterka.closeauth.api.support;
 
-import com.anterka.closeauth.exception.CredentialValidationException;
-import com.anterka.closeauth.exception.DataAlreadyExistsException;
-import com.anterka.closeauth.exception.EnterpriseRegistrationException;
-import com.anterka.closeauth.exception.UserAuthenticationException;
-import com.anterka.closeauth.exception.UserNotFoundException;
+import com.anterka.closeauth.exception.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +44,12 @@ public class GlobalAdviceController extends RuntimeException {
 
     @ExceptionHandler(EnterpriseRegistrationException.class)
     public ResponseEntity<ErrorResponse> handleEnterpriseRegException(EnterpriseRegistrationException ex){
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.CONFLICT), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(EmailVerificationException.class)
+    public ResponseEntity<ErrorResponse> handleEmailVerificationException(EmailVerificationException ex){
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.EXPECTATION_FAILED), HttpStatus.EXPECTATION_FAILED);
     }
 
 }

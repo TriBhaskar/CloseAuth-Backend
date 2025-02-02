@@ -41,8 +41,8 @@ spring:
       on-profile: dev
   datasource:
     url: jdbc:postgresql://localhost:5432/close_auth
-    username: postgres
-    password: postgres
+    username: bhaskar
+    password: bhaskar
     driver-class-name: org.postgresql.Driver
   flyway:
     locations: classpath:db/migration
@@ -56,6 +56,31 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 587
+    username: 4d11686ea71354
+    password: 4905e9e6facfa3
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
+redis:
+  host: localhost
+  port: 6379
+  password: redis_password
+  timeout: 1000
+  max-active: 8
+  max-idle: 8
+  min-idle: 0
+  use-ssl: false
 
 ---
 spring:
@@ -68,3 +93,13 @@ spring:
     password: ${PROD_DB_PASS}
   flyway:
     locations: classpath:db/migration
+
+redis:
+  host: ${PROD_REDIS_HOST}
+  port: ${PROD_REDIS_PORT}
+  password: ${PROD_REDIS_PASS}
+  timeout: 1000
+  max-active: 8
+  max-idle: 8
+  min-idle: 0
+  use-ssl: false
