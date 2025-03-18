@@ -1,4 +1,4 @@
-package com.anterka.closeauth.dto.request.auth;
+package com.anterka.closeauth.dto.request.login;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CloseAuthAuthenticationRequest {
+public class EnterpriseLoginRequest {
     @NotNull(message = "Email cannot be null")
     @NotBlank(message = "Email cannot be empty")
     private String username;

@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +20,8 @@ import java.util.function.Function;
 @Service
 public class JWTService {
 
+    @Getter
+    private long jwtExpirationTimeInMillis = 1000 * 60 * 60 * 2; // 2 hours
     private final Environment env;
 
     public JWTService(Environment env) {
@@ -54,12 +57,12 @@ public class JWTService {
      */
     public String generateJwtToken(Map<String, Object> claims, @NonNull UserDetails userDetails) {
         int expirationTimeInHours = Integer.parseInt(env.getProperty("jwt.security.secret-key.expiration.time.in-hours", "2"));
-        long expirationTimeInMillis = 1000L * 60 * 60 * expirationTimeInHours;
+        jwtExpirationTimeInMillis = 1000L * 60 * 60 * expirationTimeInHours;
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTimeInMillis))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationTimeInMillis))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
