@@ -1,10 +1,10 @@
 package com.anterka.closeauth.api;
 
-import com.anterka.closeauth.dto.request.auth.CloseAuthAuthenticationRequest;
+import com.anterka.closeauth.dto.request.login.EnterpriseLoginRequest;
 import com.anterka.closeauth.dto.request.register.EnterpriseRegistrationRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseVerifyOtpRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseResendOtpRequest;
-import com.anterka.closeauth.dto.response.CloseAuthAuthenticationResponse;
+import com.anterka.closeauth.dto.response.EnterpriseLoginResponse;
 import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseRegistrationResponse;
 import com.anterka.closeauth.service.CloseAuthAuthenticationService;
@@ -20,6 +20,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping(ApiPaths.API_PREFIX)
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*", allowedHeaders = "*") // for dev-testing only
 public class CloseAuthEnterpriseAPI {
 
     private static final Logger log = LoggerFactory.getLogger(CloseAuthEnterpriseAPI.class);
@@ -32,7 +33,7 @@ public class CloseAuthEnterpriseAPI {
     }
 
     @PostMapping(ApiPaths.LOGIN)
-    public ResponseEntity<CloseAuthAuthenticationResponse> login(@RequestBody CloseAuthAuthenticationRequest request) {
+    public ResponseEntity<EnterpriseLoginResponse> login(@RequestBody EnterpriseLoginRequest request) {
         log.info("Received authentication request : {}", request);
         return ResponseEntity.ok(authAuthenticationService.authenticate(request));
     }
