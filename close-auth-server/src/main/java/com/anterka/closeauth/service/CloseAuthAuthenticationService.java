@@ -58,18 +58,18 @@ public class CloseAuthAuthenticationService {
     public EnterpriseLoginResponse authenticate(@NonNull EnterpriseLoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (BadCredentialsException ex) {
-            throw new CredentialValidationException("Invalid username or password for user: [" + request.getUsername() + "]");
+            throw new CredentialValidationException("Invalid email or password for user: [" + request.getEmail() + "]");
         } catch (LockedException ex) {
-            throw new UserAuthenticationException("User with username: [" + request.getUsername() + "] is blocked, please contact the clos-auth");
+            throw new UserAuthenticationException("User with email: [" + request.getEmail() + "] is blocked, please contact the clos-auth");
         } catch (Exception ex) {
-            throw new EnterpriseRegistrationException("Exception occurred while authenticating the user: [" + request.getUsername() + "], Error: " + ex.getMessage());
+            throw new EnterpriseRegistrationException("Exception occurred while authenticating the user: [" + request.getEmail() + "], Error: " + ex.getMessage());
         }
         log.info("User authenticated successfully!!");
-        var user = userRepository.findByEmail(request.getUsername())
-                .orElseThrow(() -> new UserNotFoundException("User: [" + request.getUsername() + "] does not exist"));
+        var user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("User-email: [" + request.getEmail() + "] does not exist"));
         var jwtToken = jwtService.generateJwtToken(user);
 
         // TODO: Implement the logic to save the refresh token in the database
