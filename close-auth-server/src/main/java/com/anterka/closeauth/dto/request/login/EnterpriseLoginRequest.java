@@ -15,7 +15,7 @@ import javax.validation.constraints.NotNull;
 public class EnterpriseLoginRequest {
     @NotNull(message = "Email cannot be null")
     @NotBlank(message = "Email cannot be empty")
-    private String username;
+    private String email;
 
     @NotNull(message = "password cannot be null")
     @NotBlank(message = "password cannot be empty")
