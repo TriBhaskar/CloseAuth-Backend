@@ -1,5 +1,6 @@
 package com.anterka.closeauth.service;
 
+import com.anterka.closeauth.api.constants.ResponseStatus;
 import com.anterka.closeauth.constants.UserRolesEnum;
 import com.anterka.closeauth.dao.CloseAuthEnterpriseRepository;
 import com.anterka.closeauth.dao.CloseAuthEnterpriseUserRepository;
@@ -18,6 +19,7 @@ import com.anterka.closeauth.entities.CloseAuthEnterpriseDetails;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseUser;
 import com.anterka.closeauth.entities.CloseAuthUserRole;
 import com.anterka.closeauth.exception.*;
+import jakarta.mail.MessagingException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -86,11 +88,12 @@ public class CloseAuthAuthenticationService {
      */
 
     @Transactional
-    public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) {
+    public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) throws MessagingException {
         validateEnterpriseData(request.getEnterpriseDetails());
         // Send Email with OTP
         String otp = otpService.generateOtp();
         long otpValiditySeconds = otpService.saveOtp(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        //TODO: handle the messagingException
         emailService.sendOTPMail(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
         registrationCacheService.saveRegistration(request.getEnterpriseDetails().getEnterpriseEmail(), request);
         return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status("success").
@@ -117,7 +120,7 @@ public class CloseAuthAuthenticationService {
         CloseAuthEnterpriseUser user = saveAndReturnUser(registrationRequest, savedDetails);
         otpService.deleteOtp(request.getEmail());
         registrationCacheService.deleteRegistration(request.getEmail());
-        return CustomApiResponse.builder().status("success").message("Enterprise registered successfully user:"+user.getUsername()).timestamp(LocalDateTime.now()).build();
+        return CustomApiResponse.builder().status(ResponseStatus.SUCCESS).message("Enterprise registered successfully user:"+user.getUsername()).timestamp(LocalDateTime.now()).build();
     }
 
     /**
@@ -135,9 +138,14 @@ public class CloseAuthAuthenticationService {
         }
         String otp = otpService.generateOtp();
         otpService.saveOtp(request.getEmail(), otp);
-        emailService.sendOTPMail(request.getEmail(), otp);
+        try {
+            emailService.sendOTPMail(request.getEmail(), otp);
+        }catch (MessagingException e){
+            log.error(String.format("Exception occurred while sending the otp verification mail : [%s]", e.getMessage()));
+            return CustomApiResponse.builder().status(ResponseStatus.FAILED).message("Error while sending the OTP verification email").timestamp(LocalDateTime.now()).build();
+        }
         registrationCacheService.saveRegistration(request.getEmail(), registrationRequest);
-        return CustomApiResponse.builder().status("success").message("OTP sent to the email: [" + request.getEmail() + "]").timestamp(LocalDateTime.now()).build();
+        return CustomApiResponse.builder().status(ResponseStatus.SUCCESS).message("OTP sent to the email: [" + request.getEmail() + "]").timestamp(LocalDateTime.now()).build();
     }
 
     /**

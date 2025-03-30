@@ -1,5 +1,6 @@
 package com.anterka.closeauth.config;
 
+import com.anterka.closeauth.api.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,12 +21,23 @@ public class SecurityConfiguration {
 
     private final AuthenticationProvider authenticationProvider;
 
+    private final String[] skipAuthorizationForRequests = {
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.LOGIN,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.REGISTER_ENTERPRISE,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.VERIFY_OTP,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.FORGOT_PASSWORD,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.VALIDATE_TOKEN,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.RESET_PASSWORD,
+            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.RESEND_OTP,
+            ApiPaths.API_CONTEXT_PATH+"/api/v1/testredis"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/api/v1/login", "/api/v1/register" , "/api/v1/testredis" , "/api/v1/verify-otp").permitAll()
+                        .requestMatchers(skipAuthorizationForRequests).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

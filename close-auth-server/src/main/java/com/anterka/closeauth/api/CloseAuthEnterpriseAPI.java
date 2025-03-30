@@ -9,6 +9,7 @@ import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseRegistrationResponse;
 import com.anterka.closeauth.service.CloseAuthAuthenticationService;
 import com.anterka.closeauth.service.RegistrationCacheService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping(ApiPaths.API_PREFIX)
 @RequiredArgsConstructor
+@RequestMapping(ApiPaths.API_PREFIX)
 @CrossOrigin(origins = "*", allowedHeaders = "*") // for dev-testing only
 public class CloseAuthEnterpriseAPI {
 
@@ -28,7 +29,7 @@ public class CloseAuthEnterpriseAPI {
     private final RegistrationCacheService registrationCacheService;
 
     @PostMapping(ApiPaths.REGISTER_ENTERPRISE)
-    public ResponseEntity<EnterpriseRegistrationResponse> register(@Valid @RequestBody EnterpriseRegistrationRequest request) {
+    public ResponseEntity<EnterpriseRegistrationResponse> register(@Valid @RequestBody EnterpriseRegistrationRequest request) throws MessagingException {
         return ResponseEntity.ok(authAuthenticationService.registerEnterprise(request));
     }
 

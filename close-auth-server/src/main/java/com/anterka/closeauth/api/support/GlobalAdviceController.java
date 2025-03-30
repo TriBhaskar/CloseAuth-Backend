@@ -52,4 +52,23 @@ public class GlobalAdviceController extends RuntimeException {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.EXPECTATION_FAILED), HttpStatus.EXPECTATION_FAILED);
     }
 
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTokenException(InvalidTokenException ex) {
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PasswordMismatchedException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordMisMatchedException(PasswordMismatchedException ex){
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(WeakPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleWeakPasswordException(WeakPasswordException ex){
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PasswordReusedException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordReusedException(PasswordReusedException ex){
+        return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
 }

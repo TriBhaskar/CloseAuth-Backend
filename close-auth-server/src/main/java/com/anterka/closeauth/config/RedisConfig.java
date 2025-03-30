@@ -1,9 +1,11 @@
 package com.anterka.closeauth.config;
 
+import lombok.Getter;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.Connection;
@@ -29,6 +31,25 @@ public class RedisConfig {
     private int minIdle;
     @Value("${redis.use-ssl}")
     private boolean useSsl;
+
+    /**
+     * properties related to the password operations
+     * */
+    @Getter
+    @Value("${redis.app.rate-limit.forgot-password}")
+    private String forgotPasswordRateLimit;
+
+    @Getter
+    @Value("${redis.app.rate-limit.validate-token}")
+    private String validateTokenRateLimit;
+
+    @Getter
+    @Value("${redis.app.rate-limit.reset-password}")
+    private String resetPasswordRateLimit;
+
+    @Getter
+    @Value("${redis.app.rate-limit.window-minutes}")
+    private String windowMinutesRateLimit;
 
     @Bean
     public JedisPooled jedisPooled(){
