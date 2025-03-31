@@ -15,13 +15,12 @@ import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @AllArgsConstructor
@@ -30,82 +29,94 @@ public class CloseAuthPasswordResetService {
     private static final Logger log = LoggerFactory.getLogger(CloseAuthPasswordResetService.class);
     private static final String PASSWORD_RESET_PREFIX = "password_reset:";
     private final CloseAuthEnterpriseUserRepository userRepository;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final JedisPooled jedisPooled;
     private final JavaMailSender mailSender;
     private final BCryptPasswordEncoder passwordEncoder;
     private final CloseAuthAppConfig appConfig;
     private final EmailService emailService;
 
     public void processForgotPassword(CloseAuthForgotPasswordRequest request) {
-        // Find user by email
-        String email = request.getUserEmail();
-        long tokenExpiryMinutes = Long.parseLong(appConfig.getTokenExpiryMinutes());
-        String resetPasswordUrl = appConfig.getResetPasswordUrl();
-        CloseAuthEnterpriseUser user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(String.format("No user found with the requested email : [%s]", email)));
-
-        String token = UUID.randomUUID().toString();
-
-        String redisKey = PASSWORD_RESET_PREFIX + token;
-        redisTemplate.opsForValue().set(redisKey, user.getId().toString(), tokenExpiryMinutes, TimeUnit.MINUTES);
-
-        // Create password reset link
-        String resetLink = resetPasswordUrl + "?token=" + token;
         try {
-            emailService.sendForgotPasswordLinkMail(user.getEmail(), resetLink, tokenExpiryMinutes);
-        }catch (MessagingException exception){
-            log.error(String.format("Exception occurred while sending the forgot password email to the user : [%s]", user.getEmail()));
+            // Find user by email
+            String email = request.getEmail();
+            log.info("Processing the forgot password request");
+            long tokenExpiryMinutes = Long.parseLong(appConfig.getTokenExpiryMinutes());
+            String resetPasswordUrl = request.getForgotPasswordLink();
+            CloseAuthEnterpriseUser user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException(String.format("No user found with the requested email : [%s]", email)));
+
+            String token = UUID.randomUUID().toString();
+
+            String redisKey = PASSWORD_RESET_PREFIX + token;
+            // Convert minutes to seconds for Jedis setex
+            jedisPooled.setex(redisKey, (int) (tokenExpiryMinutes * 60), user.getId().toString());
+
+            // Create password reset link
+            String resetLink = resetPasswordUrl + "?token=" + token;
+            sendEmail(user.getEmail(), resetLink, tokenExpiryMinutes);
+        } catch (Exception e) {
+            log.error("Error while processing forgot password request: {}", e.getMessage(), e);
+            throw e;
         }
     }
 
     public void resetPassword(CloseAuthResetPasswordRequest request) {
-        // Validate token exists and isn't expired first
-        String redisKey = PASSWORD_RESET_PREFIX + request.getToken();
-        String userId = redisTemplate.opsForValue().get(redisKey);
+        try {
+            String redisKey = PASSWORD_RESET_PREFIX + request.getToken();
+            String userId = jedisPooled.get(redisKey);
 
-        if (userId == null) {
-            // To prevent timing attacks, still perform password validation
-            // but throw the same exception regardless
+            if (userId == null) {
+                validatePasswordStrength(request.getNewPassword());
+                throw new InvalidTokenException("Invalid or expired token");
+            }
+
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                throw new PasswordMismatchedException("Passwords entered do not match");
+            }
+
             validatePasswordStrength(request.getNewPassword());
-            throw new InvalidTokenException("Invalid or expired token");
+
+            CloseAuthEnterpriseUser user = userRepository.findById(Long.valueOf(userId))
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+            if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+                throw new PasswordReusedException("New password must be different from the current password");
+            }
+
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+
+            jedisPooled.del(redisKey);
+        } catch (Exception e) {
+            if (e instanceof InvalidTokenException || e instanceof PasswordMismatchedException ||
+                    e instanceof PasswordReusedException || e instanceof UserNotFoundException ||
+                    e instanceof WeakPasswordException) {
+                throw e;
+            }
+            log.error("Error in resetPassword: {}", e.getMessage(), e);
+            throw e;
         }
-
-        // Validate password strength and match
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new PasswordMismatchedException("Passwords entered do not match");
-        }
-
-        validatePasswordStrength(request.getNewPassword());
-
-        // Find user
-        CloseAuthEnterpriseUser user = userRepository.findById(Long.valueOf(userId))
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-            throw new PasswordReusedException("New password must be different from the current password");
-        }
-
-        // Update password
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-
-        // Delete token from Redis immediately after successful use
-        redisTemplate.delete(redisKey);
     }
 
     public CloseAuthTokenValidationResponse validateToken(String token) {
-        if (token == null || token.isEmpty()) {
-            return new CloseAuthTokenValidationResponse(false, "Token is required");
-        }
+        try {
+            if (token == null || token.isEmpty()) {
+                return new CloseAuthTokenValidationResponse(false, "Token is required");
+            }
 
-        String redisKey = PASSWORD_RESET_PREFIX + token;
-        String userId = redisTemplate.opsForValue().get(redisKey);
+            String redisKey = PASSWORD_RESET_PREFIX + token;
+            String userId = jedisPooled.get(redisKey);
 
-        if (userId == null) {
-            return new CloseAuthTokenValidationResponse(false, "Invalid or expired token");
+            if (userId == null) {
+                return new CloseAuthTokenValidationResponse(false, "Invalid or expired token");
+            }
+            //TODO: Add the token validation rate limiting logic w.r.t an IP or user
+            return new CloseAuthTokenValidationResponse(true, "Token is valid");
+        } catch (Exception e) {
+            log.error("Error in validateToken: {}", e.getMessage(), e);
+            // Fail closed for security
+            return new CloseAuthTokenValidationResponse(false, "Error validating token");
         }
-        //TODO: Add the token validation rate limiting logic w.r.t an IP or user
-        return new CloseAuthTokenValidationResponse(true, "Token is valid");
     }
 
     private void validatePasswordStrength(String password) {
@@ -130,6 +141,14 @@ public class CloseAuthPasswordResetService {
 
         if (!(hasLetter && hasDigit && hasSpecial)) {
             throw new WeakPasswordException("Password must contain at least one letter, one number, and one special character");
+        }
+    }
+
+    private void sendEmail(String email, String resetLink, long tokenExpiryMinutes){
+        try {
+            emailService.sendForgotPasswordLinkMail(email, resetLink, tokenExpiryMinutes);
+        } catch (MessagingException exception) {
+            log.error(String.format("Exception occurred while sending the forgot password email to the user : [%s]", email));
         }
     }
 }

@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class CloseAuthForgotPasswordRequest {
-    private String userEmail;
+    private String email;
+    private String forgotPasswordLink;
 }

@@ -2,10 +2,8 @@ package com.anterka.closeauth.service.redis;
 
 import com.anterka.closeauth.config.RedisConfig;
 import lombok.AllArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
+import redis.clients.jedis.JedisPooled;
 
 /**
  * This service will handle rate limiting for password reset-related operations.
@@ -15,14 +13,13 @@ import java.util.concurrent.TimeUnit;
 @AllArgsConstructor
 public class CloseAuthRateLimiterService {
 
-    private final RedisTemplate<String, String> redisTemplate;
-
+    private final JedisPooled jedisPooled;
     private final RedisConfig redisConfig;
 
     public boolean isLimited(String action, String identifier) {
         String key = "rate_limit:" + action + ":" + identifier;
 
-        String countStr = redisTemplate.opsForValue().get(key);
+        String countStr = jedisPooled.get(key);
         int count = (countStr != null) ? Integer.parseInt(countStr) : 0;
 
         int limit = switch (action) {
@@ -37,9 +34,9 @@ public class CloseAuthRateLimiterService {
         }
 
         if (count == 0) {
-            redisTemplate.opsForValue().set(key, "1", Integer.parseInt(redisConfig.getWindowMinutesRateLimit()), TimeUnit.MINUTES);
+            jedisPooled.setex(key, Integer.parseInt(redisConfig.getWindowMinutesRateLimit()) * 60L, "1");
         } else {
-            redisTemplate.opsForValue().increment(key);
+            jedisPooled.incr(key);
         }
 
         return false;

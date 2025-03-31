@@ -9,7 +9,7 @@ server:
 
 logging:
   level:
-    root: trace
+    root: info
 
 spring:
   profiles:
@@ -36,9 +36,6 @@ app:
   password-reset:
     token:
       expiry: 10 # in minutes
-  frontend:
-    reset-password:
-      url: http://localhost:5173/close-auth/forgot-passsword
 
 
 ---
@@ -64,7 +61,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   mail:
-    host: sandbox.smtp.mailtrap.io
+    host: smtp.gmail.com
     port: 587
     username: closeauth@gmail.com
     password: czsilpodziornmpl

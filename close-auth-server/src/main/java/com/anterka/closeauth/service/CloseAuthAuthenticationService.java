@@ -72,6 +72,7 @@ public class CloseAuthAuthenticationService {
         log.info("User authenticated successfully!!");
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User-email: [" + request.getEmail() + "] does not exist"));
+
         var jwtToken = jwtService.generateJwtToken(user);
 
         // TODO: Implement the logic to save the refresh token in the database
@@ -80,7 +81,7 @@ public class CloseAuthAuthenticationService {
                         .firstName(user.getFirstName()).lastName(user.getLastName()).username(user.getUsername())
                         .email(user.getEmail()).role(user.getRole().getRole().name()).build())
                 .auth(EnterpriseLoginData.EnterpriseAuth.builder().accessToken(jwtToken).refreshToken(jwtToken).expiresIn(jwtService.getJwtExpirationTimeInMillis()).build()).build();
-        return EnterpriseLoginResponse.builder().status("success").message("Login Successful").data(loginData).build();
+        return EnterpriseLoginResponse.builder().status(ResponseStatus.SUCCESS).message("Login Successful").data(loginData).build();
     }
 
     /**
@@ -96,7 +97,7 @@ public class CloseAuthAuthenticationService {
         //TODO: handle the messagingException
         emailService.sendOTPMail(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
         registrationCacheService.saveRegistration(request.getEnterpriseDetails().getEnterpriseEmail(), request);
-        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status("success").
+        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status(ResponseStatus.SUCCESS).
                 message("OTP sent to the email: [" + request.getEnterpriseDetails().getEnterpriseEmail() + "]").
                 timestamp(LocalDateTime.now()).build();
     }

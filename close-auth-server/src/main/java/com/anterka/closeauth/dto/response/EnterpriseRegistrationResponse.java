@@ -1,5 +1,6 @@
 package com.anterka.closeauth.dto.response;
 
+import com.anterka.closeauth.api.constants.ResponseStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EnterpriseRegistrationResponse {
-    private String status;
+    private ResponseStatus status;
     private String message;
     private String username;
     private long otpValiditySeconds;

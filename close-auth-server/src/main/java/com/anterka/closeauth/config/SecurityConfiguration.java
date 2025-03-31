@@ -22,14 +22,14 @@ public class SecurityConfiguration {
     private final AuthenticationProvider authenticationProvider;
 
     private final String[] skipAuthorizationForRequests = {
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.LOGIN,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.REGISTER_ENTERPRISE,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.VERIFY_OTP,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.FORGOT_PASSWORD,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.VALIDATE_TOKEN,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.RESET_PASSWORD,
-            ApiPaths.API_CONTEXT_PATH+ApiPaths.API_PREFIX+ApiPaths.RESEND_OTP,
-            ApiPaths.API_CONTEXT_PATH+"/api/v1/testredis"
+            ApiPaths.API_PREFIX+ApiPaths.LOGIN,
+            ApiPaths.API_PREFIX+ApiPaths.REGISTER_ENTERPRISE,
+            ApiPaths.API_PREFIX+ApiPaths.VERIFY_OTP,
+            ApiPaths.API_PREFIX+ApiPaths.FORGOT_PASSWORD,
+            ApiPaths.API_PREFIX+ApiPaths.VALIDATE_TOKEN,
+            ApiPaths.API_PREFIX+ApiPaths.RESET_PASSWORD,
+            ApiPaths.API_PREFIX+ApiPaths.RESEND_OTP,
+            "/api/v1/testredis"
     };
 
     @Bean

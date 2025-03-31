@@ -10,7 +10,4 @@ public class CloseAuthAppConfig {
 
     @Value("${app.password-reset.token.expiry}")
     private String tokenExpiryMinutes;
-
-    @Value("${app.frontend.reset-password.url}")
-    private String resetPasswordUrl;
 }
