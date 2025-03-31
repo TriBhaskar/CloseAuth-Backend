@@ -1,5 +1,6 @@
 package com.anterka.closeauth.service;
 
+import com.anterka.closeauth.api.constants.ResponseStatus;
 import com.anterka.closeauth.constants.UserRolesEnum;
 import com.anterka.closeauth.dao.CloseAuthEnterpriseRepository;
 import com.anterka.closeauth.dao.CloseAuthEnterpriseUserRepository;
@@ -10,14 +11,20 @@ import com.anterka.closeauth.dto.request.register.EnterpriseDetailsRequest;
 import com.anterka.closeauth.dto.request.register.EnterpriseRegistrationRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseResendOtpRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseVerifyOtpRequest;
+import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseLoginData;
 import com.anterka.closeauth.dto.response.EnterpriseLoginResponse;
-import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseRegistrationResponse;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseDetails;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseUser;
 import com.anterka.closeauth.entities.CloseAuthUserRole;
-import com.anterka.closeauth.exception.*;
+import com.anterka.closeauth.exception.CredentialValidationException;
+import com.anterka.closeauth.exception.DataAlreadyExistsException;
+import com.anterka.closeauth.exception.EmailVerificationException;
+import com.anterka.closeauth.exception.EnterpriseRegistrationException;
+import com.anterka.closeauth.exception.UserAuthenticationException;
+import com.anterka.closeauth.exception.UserNotFoundException;
+import jakarta.mail.MessagingException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -70,15 +77,16 @@ public class CloseAuthAuthenticationService {
         log.info("User authenticated successfully!!");
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User-email: [" + request.getEmail() + "] does not exist"));
+
         var jwtToken = jwtService.generateJwtToken(user);
 
         // TODO: Implement the logic to save the refresh token in the database
 
-        EnterpriseLoginData loginData  = EnterpriseLoginData.builder().user(EnterpriseLoginData.EnterpriseUser.builder().userId(user.getId())
+        EnterpriseLoginData loginData  = EnterpriseLoginData.builder().enterprise(EnterpriseLoginData.Enterprise.builder().enterpriseName(user.getCloseAuthEnterpriseDetails().getName()).build()).user(EnterpriseLoginData.EnterpriseUser.builder().userId(user.getId())
                         .firstName(user.getFirstName()).lastName(user.getLastName()).username(user.getUsername())
                         .email(user.getEmail()).role(user.getRole().getRole().name()).build())
                 .auth(EnterpriseLoginData.EnterpriseAuth.builder().accessToken(jwtToken).refreshToken(jwtToken).expiresIn(jwtService.getJwtExpirationTimeInMillis()).build()).build();
-        return EnterpriseLoginResponse.builder().status("success").message("Login Successful").data(loginData).build();
+        return EnterpriseLoginResponse.builder().status(ResponseStatus.SUCCESS).message("Login Successful").data(loginData).build();
     }
 
     /**
@@ -86,14 +94,15 @@ public class CloseAuthAuthenticationService {
      */
 
     @Transactional
-    public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) {
+    public EnterpriseRegistrationResponse registerEnterprise(EnterpriseRegistrationRequest request) throws MessagingException {
         validateEnterpriseData(request.getEnterpriseDetails());
         // Send Email with OTP
         String otp = otpService.generateOtp();
         long otpValiditySeconds = otpService.saveOtp(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
+        //TODO: handle the messagingException
         emailService.sendOTPMail(request.getEnterpriseDetails().getEnterpriseEmail(), otp);
         registrationCacheService.saveRegistration(request.getEnterpriseDetails().getEnterpriseEmail(), request);
-        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status("success").
+        return EnterpriseRegistrationResponse.builder().username(request.getUserName()).otpValiditySeconds(otpValiditySeconds).status(ResponseStatus.SUCCESS).
                 message("OTP sent to the email: [" + request.getEnterpriseDetails().getEnterpriseEmail() + "]").
                 timestamp(LocalDateTime.now()).build();
     }
@@ -117,7 +126,7 @@ public class CloseAuthAuthenticationService {
         CloseAuthEnterpriseUser user = saveAndReturnUser(registrationRequest, savedDetails);
         otpService.deleteOtp(request.getEmail());
         registrationCacheService.deleteRegistration(request.getEmail());
-        return CustomApiResponse.builder().status("success").message("Enterprise registered successfully user:"+user.getUsername()).timestamp(LocalDateTime.now()).build();
+        return CustomApiResponse.builder().status(ResponseStatus.SUCCESS).message("Enterprise registered successfully user:"+user.getUsername()).timestamp(LocalDateTime.now()).build();
     }
 
     /**
@@ -135,9 +144,14 @@ public class CloseAuthAuthenticationService {
         }
         String otp = otpService.generateOtp();
         otpService.saveOtp(request.getEmail(), otp);
-        emailService.sendOTPMail(request.getEmail(), otp);
+        try {
+            emailService.sendOTPMail(request.getEmail(), otp);
+        }catch (MessagingException e){
+            log.error(String.format("Exception occurred while sending the otp verification mail : [%s]", e.getMessage()));
+            return CustomApiResponse.builder().status(ResponseStatus.FAILED).message("Error while sending the OTP verification email").timestamp(LocalDateTime.now()).build();
+        }
         registrationCacheService.saveRegistration(request.getEmail(), registrationRequest);
-        return CustomApiResponse.builder().status("success").message("OTP sent to the email: [" + request.getEmail() + "]").timestamp(LocalDateTime.now()).build();
+        return CustomApiResponse.builder().status(ResponseStatus.SUCCESS).message("OTP sent to the email: [" + request.getEmail() + "]").timestamp(LocalDateTime.now()).build();
     }
 
     /**
@@ -168,7 +182,7 @@ public class CloseAuthAuthenticationService {
     private CloseAuthEnterpriseUser saveAndReturnUser(EnterpriseRegistrationRequest request, CloseAuthEnterpriseDetails savedDetails) {
         CloseAuthEnterpriseUser user = mapper.toEnterpriseUserWithDetails(request, savedDetails);
         user.setPassword(passwordEncoder.encode(request.getUserPassword()));
-        user.setEmail(savedDetails.getEmail()); //TODO : Email to be saved for the ORGANIZATION user for login
+        user.setEmail(savedDetails.getEmail());
 
         Optional<CloseAuthUserRole> role = userRoleRepository.findByRole(UserRolesEnum.ORGANIZATION);
         if (role.isEmpty()) {

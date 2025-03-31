@@ -1,5 +1,6 @@
 package com.anterka.closeauth.config;
 
+import com.anterka.closeauth.api.ApiPaths;
 import com.anterka.closeauth.service.CloseAuthEnterpriseUserService;
 import com.anterka.closeauth.service.JWTService;
 import jakarta.servlet.FilterChain;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 
 @Component
@@ -27,11 +29,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final CloseAuthEnterpriseUserService closeAuthEnterpriseUserService;
     public static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
+    private final String[] skipFilterForRequests = {
+            ApiPaths.API_PREFIX+ApiPaths.LOGIN,
+            ApiPaths.API_PREFIX+ApiPaths.REGISTER_ENTERPRISE,
+            ApiPaths.API_PREFIX+ApiPaths.VERIFY_OTP,
+            ApiPaths.API_PREFIX+ApiPaths.FORGOT_PASSWORD,
+            ApiPaths.API_PREFIX+ApiPaths.VALIDATE_TOKEN,
+            ApiPaths.API_PREFIX+ApiPaths.RESET_PASSWORD,
+            ApiPaths.API_PREFIX+ApiPaths.RESEND_OTP,
+            "/api/v1/testredis"
+    };
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Skip filter for login and register endpoints
-        String path = request.getServletPath();
-        return path.contains("/api/v1/login") || path.contains("/api/v1/register");
+        String requestUri = request.getRequestURI();
+        return Arrays.stream(skipFilterForRequests).anyMatch(requestUri::equals);
     }
 
     @Override
@@ -43,6 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authorizationHeader = request.getHeader("Authorization");
         final String jwtToken;
         final String userEmail;
+
+
+        if (shouldNotFilter(request)) {
+            log.info("Skipping JWT authentication for: {}", request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         log.trace("Checking the request header");
         if(authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
