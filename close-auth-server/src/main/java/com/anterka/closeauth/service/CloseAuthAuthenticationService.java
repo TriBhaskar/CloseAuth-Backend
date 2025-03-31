@@ -11,14 +11,19 @@ import com.anterka.closeauth.dto.request.register.EnterpriseDetailsRequest;
 import com.anterka.closeauth.dto.request.register.EnterpriseRegistrationRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseResendOtpRequest;
 import com.anterka.closeauth.dto.request.verifyotp.EnterpriseVerifyOtpRequest;
+import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseLoginData;
 import com.anterka.closeauth.dto.response.EnterpriseLoginResponse;
-import com.anterka.closeauth.dto.response.CustomApiResponse;
 import com.anterka.closeauth.dto.response.EnterpriseRegistrationResponse;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseDetails;
 import com.anterka.closeauth.entities.CloseAuthEnterpriseUser;
 import com.anterka.closeauth.entities.CloseAuthUserRole;
-import com.anterka.closeauth.exception.*;
+import com.anterka.closeauth.exception.CredentialValidationException;
+import com.anterka.closeauth.exception.DataAlreadyExistsException;
+import com.anterka.closeauth.exception.EmailVerificationException;
+import com.anterka.closeauth.exception.EnterpriseRegistrationException;
+import com.anterka.closeauth.exception.UserAuthenticationException;
+import com.anterka.closeauth.exception.UserNotFoundException;
 import jakarta.mail.MessagingException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +82,7 @@ public class CloseAuthAuthenticationService {
 
         // TODO: Implement the logic to save the refresh token in the database
 
-        EnterpriseLoginData loginData  = EnterpriseLoginData.builder().user(EnterpriseLoginData.EnterpriseUser.builder().userId(user.getId())
+        EnterpriseLoginData loginData  = EnterpriseLoginData.builder().enterprise(EnterpriseLoginData.Enterprise.builder().enterpriseName(user.getCloseAuthEnterpriseDetails().getName()).build()).user(EnterpriseLoginData.EnterpriseUser.builder().userId(user.getId())
                         .firstName(user.getFirstName()).lastName(user.getLastName()).username(user.getUsername())
                         .email(user.getEmail()).role(user.getRole().getRole().name()).build())
                 .auth(EnterpriseLoginData.EnterpriseAuth.builder().accessToken(jwtToken).refreshToken(jwtToken).expiresIn(jwtService.getJwtExpirationTimeInMillis()).build()).build();
@@ -177,7 +182,7 @@ public class CloseAuthAuthenticationService {
     private CloseAuthEnterpriseUser saveAndReturnUser(EnterpriseRegistrationRequest request, CloseAuthEnterpriseDetails savedDetails) {
         CloseAuthEnterpriseUser user = mapper.toEnterpriseUserWithDetails(request, savedDetails);
         user.setPassword(passwordEncoder.encode(request.getUserPassword()));
-        user.setEmail(savedDetails.getEmail()); //TODO : Email to be saved for the ORGANIZATION user for login
+        user.setEmail(savedDetails.getEmail());
 
         Optional<CloseAuthUserRole> role = userRoleRepository.findByRole(UserRolesEnum.ORGANIZATION);
         if (role.isEmpty()) {

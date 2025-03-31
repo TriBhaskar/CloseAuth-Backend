@@ -1,14 +1,11 @@
 package com.anterka.closeauth.entities;
 
 import com.anterka.closeauth.constants.CloseAuthTables;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -19,7 +16,6 @@ import lombok.NoArgsConstructor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @Builder
@@ -74,6 +70,8 @@ public class CloseAuthEnterpriseDetails implements Serializable {
     @Column(name = CloseAuthTables.EnterpriseDetails.UPDATED_AT)
     private Instant updatedAt;
 
+    // Disabling to return the list of the users under the enterprise as we can query it later on
+  /*  @JsonIgnore
     @OneToMany(mappedBy = "closeAuthEnterpriseDetails", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CloseAuthEnterpriseUser> closeAuthEnterpriseUsers;
+    private List<CloseAuthEnterpriseUser> closeAuthEnterpriseUsers;*/
 }

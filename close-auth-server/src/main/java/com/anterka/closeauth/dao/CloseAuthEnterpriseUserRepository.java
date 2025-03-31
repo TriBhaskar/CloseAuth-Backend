@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface CloseAuthEnterpriseUserRepository extends JpaRepository<CloseAuthEnterpriseUser, Long> {
     Optional<CloseAuthEnterpriseUser> findByEmail(String email);
+
 }

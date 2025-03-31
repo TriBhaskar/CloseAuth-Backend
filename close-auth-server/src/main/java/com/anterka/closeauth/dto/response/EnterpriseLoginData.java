@@ -10,8 +10,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EnterpriseLoginData {
+    private Enterprise enterprise;
     private EnterpriseUser user;
     private EnterpriseAuth auth;
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Enterprise {
+        private String enterpriseName;
+    }
 
     @Data
     @Builder
@@ -24,7 +33,9 @@ public class EnterpriseLoginData {
         private String firstName;
         private String lastName;
         private String role;
+
     }
+
     @Data
     @Builder
     @AllArgsConstructor

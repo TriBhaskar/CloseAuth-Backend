@@ -71,7 +71,6 @@ public class CloseAuthEnterpriseAPI {
     @PostMapping(ApiPaths.FORGOT_PASSWORD)
     public ResponseEntity<CloseAuthForgotPasswordResponse> forgotPassword(@RequestBody CloseAuthForgotPasswordRequest request,
                                                                           HttpServletRequest servletRequest) {
-        // Rate limiting for forgot password requests
         log.info("Received request for the forgot password");
         String clientIp = getClientIp(servletRequest);
         if (rateLimiter.isLimited("forgot_password", clientIp)) {
