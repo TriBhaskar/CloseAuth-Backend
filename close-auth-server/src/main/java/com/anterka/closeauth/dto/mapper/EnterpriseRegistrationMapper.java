@@ -24,7 +24,6 @@ public interface EnterpriseRegistrationMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", source = "userName")
     @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "closeAuthEnterpriseUsers", ignore = true)
     CloseAuthEnterpriseDetails toEnterpriseDetails(EnterpriseRegistrationRequest request);
 
     @Mapping(target = "id", ignore = true)
